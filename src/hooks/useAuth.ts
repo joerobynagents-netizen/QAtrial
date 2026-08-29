@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo } 
 import { createElement, type ReactNode } from 'react';
 import { apiFetch } from '../lib/apiClient';
 
+const AUTH_BOOT_TIMEOUT_MS = 10_000;
+
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface AuthUser {
@@ -17,6 +19,7 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  bootError: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
@@ -52,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // shell during this gap was what allowed the auth/UI flip-flop.
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [bootError, setBootError] = useState<string | null>(null);
 
   const isAuthenticated = !!user && !!token;
 
@@ -76,13 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ── Refresh ─────────────────────────────────────────────────────────────
 
-  const doRefresh = useCallback(async () => {
+  const doRefresh = useCallback(async (signal?: AbortSignal) => {
     const rt = localStorage.getItem(REFRESH_KEY);
     if (!rt) throw new Error('No refresh token');
 
     const res = await apiFetch<{ accessToken: string; refreshToken: string }>('/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refreshToken: rt }),
+      signal,
     });
 
     storeTokens(res.accessToken, res.refreshToken);
@@ -93,16 +98,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    const bootController = new AbortController();
+    let timedOut = false;
+    const bootTimer = window.setTimeout(() => {
+      timedOut = true;
+      bootController.abort();
+    }, AUTH_BOOT_TIMEOUT_MS);
 
     async function boot() {
       const storedToken = localStorage.getItem(TOKEN_KEY);
       if (!storedToken) {
+        window.clearTimeout(bootTimer);
         if (!cancelled) setIsLoading(false);
         return;
       }
 
       try {
-        const res = await apiFetch<{ user: AuthUser }>('/auth/me');
+        const res = await apiFetch<{ user: AuthUser }>('/auth/me', { signal: bootController.signal });
         if (!tokenMatchesUser(storedToken, res.user)) {
           if (!cancelled) clearTokens();
           return;
@@ -112,11 +124,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(res.user);
         }
       } catch {
+        if (timedOut) {
+          if (!cancelled) setBootError('Sign-in verification timed out after 10 seconds.');
+          return;
+        }
         // One refresh attempt is allowed for an expired token. If it cannot
         // establish a consistent identity, logout is terminal until login.
         try {
-          const refreshedToken = await doRefresh();
-          const res = await apiFetch<{ user: AuthUser }>('/auth/me');
+          const refreshedToken = await doRefresh(bootController.signal);
+          const res = await apiFetch<{ user: AuthUser }>('/auth/me', { signal: bootController.signal });
           if (!tokenMatchesUser(refreshedToken, res.user)) {
             if (!cancelled) clearTokens();
             return;
@@ -126,6 +142,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(res.user);
           }
         } catch {
+          if (timedOut) {
+            if (!cancelled) setBootError('Session refresh timed out after 10 seconds.');
+            return;
+          }
           // Clear once and remain logged out. This effect does not retry after
           // logout, so an invalid/stale JWT cannot create an auth loop.
           if (!cancelled) {
@@ -133,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } finally {
+        window.clearTimeout(bootTimer);
         if (!cancelled) {
           setIsLoading(false);
         }
@@ -140,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     boot();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.clearTimeout(bootTimer); bootController.abort(); };
   }, [clearTokens, doRefresh, tokenMatchesUser]);
 
   // ── Login ───────────────────────────────────────────────────────────────
@@ -201,12 +222,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       isAuthenticated,
       isLoading,
+      bootError,
       login,
       register,
       logout,
       refreshToken: refreshTokenFn,
     }),
-    [user, token, isAuthenticated, isLoading, login, register, logout, refreshTokenFn],
+    [user, token, isAuthenticated, isLoading, bootError, login, register, logout, refreshTokenFn],
   );
 
   return createElement(AuthContext.Provider, { value }, children);

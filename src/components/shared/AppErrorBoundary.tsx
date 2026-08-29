@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { clearClientDataAndReload } from '../../lib/clientRecovery';
 
 interface Props {
   children: ReactNode;
@@ -6,6 +7,7 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  message: string;
 }
 
 /**
@@ -13,19 +15,20 @@ interface State {
  * a recovery screen, not an empty document.
  */
 export class AppErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, message: '' };
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, message: error.message || 'Unknown render error' };
   }
 
-  componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {
-    // Intentionally do not rethrow. The recovery UI is the terminal state for
-    // this render failure and prevents a render/crash loop.
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Keep the page usable while retaining enough information to diagnose a
+    // client-side regression from the browser console.
+    console.error('QAtrial render error', error, errorInfo);
   }
 
-  private returnToProjects = () => {
-    window.location.assign('/');
+  private clearCacheAndReload = () => {
+    void clearClientDataAndReload();
   };
 
   render() {
@@ -35,14 +38,17 @@ export class AppErrorBoundary extends Component<Props, State> {
           <section className="w-full max-w-md rounded-xl border border-border bg-surface p-6 text-center shadow-lg">
             <h1 className="text-lg font-semibold text-text-primary">We couldn’t open this page</h1>
             <p className="mt-2 text-sm text-text-secondary">
-              The application recovered safely. Return to your projects and try again.
+              Clear cached application data and reload to recover safely.
+            </p>
+            <p className="mt-3 rounded-md bg-surface-secondary px-3 py-2 text-left font-mono text-xs text-text-secondary" role="status">
+              {this.state.message}
             </p>
             <button
               type="button"
-              onClick={this.returnToProjects}
+              onClick={this.clearCacheAndReload}
               className="mt-5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
             >
-              Return to projects
+              Clear cache & reload
             </button>
           </section>
         </main>

@@ -19,6 +19,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:server": "vitest run server/app.contract.test.ts",
+    "test:smoke": "node scripts/smoke-browser.mjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "server": "tsx server/index.ts",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

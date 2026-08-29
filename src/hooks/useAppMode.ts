@@ -8,8 +8,9 @@ const API_URL_KEY = 'qatrial:api-url';
 function getInitialMode(): AppMode {
   const stored = localStorage.getItem(MODE_KEY);
   if (stored === 'standalone' || stored === 'server') return stored;
-  // If VITE_API_URL is set, default to server mode
-  if (import.meta.env.VITE_API_URL) return 'server';
+  // The bundled application served by the local production server must boot
+  // into its authenticated mode even in a brand-new browser profile.
+  if (import.meta.env.VITE_API_URL || window.location.port === '3001') return 'server';
   return 'standalone';
 }
 

@@ -5,6 +5,7 @@ import './i18n'
 import { useThemeStore } from './store/useThemeStore'
 import App from './App.tsx'
 import { AppErrorBoundary } from './components/shared/AppErrorBoundary.tsx'
+import { retireLegacyClientCache } from './lib/clientRecovery.ts'
 
 // Initialize theme from persisted state
 const theme = useThemeStore.getState().theme;
@@ -12,14 +13,11 @@ if (theme === 'dark') {
   document.documentElement.classList.add('dark');
 }
 
-// Register service worker for PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // SW registration failed — non-critical
-    });
-  });
-}
+// Service workers are deliberately retired: the legacy worker cached the app
+// shell indefinitely and could make a healthy server appear blank. Do not
+// await cleanup; rendering must remain available even if browser storage is
+// blocked or unavailable.
+void retireLegacyClientCache();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

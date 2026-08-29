@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { useAppMode } from './hooks/useAppMode';
 import { AppShell } from './components/layout/AppShell';
 import { LoginPage } from './components/auth/LoginPage';
+import { BootFailure } from './components/shared/BootFailure';
 
 const AuditModeView = lazy(() => import('./components/audit/AuditModeView').then((m) => ({ default: m.AuditModeView })));
 const SupplierPortalView = lazy(() => import('./components/suppliers/SupplierPortalView').then((m) => ({ default: m.SupplierPortalView })));
@@ -27,7 +28,7 @@ function getSupplierPortalToken(): string | null {
 
 function AppContent() {
   const { mode } = useAppMode();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, bootError } = useAuth();
 
   // Check for audit mode URL — this bypasses all auth
   const auditToken = getAuditToken();
@@ -69,6 +70,10 @@ function AppContent() {
         <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     );
+  }
+
+  if (bootError) {
+    return <BootFailure message={bootError} />;
   }
 
   // Server mode: not authenticated -> login page
