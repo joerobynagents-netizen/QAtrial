@@ -67,6 +67,11 @@ function TabSpinner() {
   );
 }
 
+function getRequestedProjectId(): string | null {
+  const match = window.location.pathname.match(/^\/(?:project|projects|project-detail)\/([^/]+)\/?$/i);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export function AppShell() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ViewTab>('requirements');
@@ -100,6 +105,7 @@ export function AppShell() {
   const [showTeam, setShowTeam] = useState(false);
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showExportPanel, setShowExportPanel] = useState(false);
+  const [projectNotice, setProjectNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isServerMode || projectsLoading) return;
@@ -113,12 +119,34 @@ export function AppShell() {
       return;
     }
 
+    const requestedProjectId = getRequestedProjectId();
+    if (requestedProjectId) {
+      const requestedProject = projects.find((candidate) => candidate.id === requestedProjectId);
+      if (requestedProject) {
+        setProjectNotice(null);
+        if (activeProject?.id !== requestedProject.id) setActiveProject(requestedProject);
+        return;
+      }
+
+      // A failed create can leave a browser at a project URL that does not
+      // exist. Redirect to the project list instead of rendering a blank view.
+      clearProject();
+      setActiveProject(projects[0]);
+      window.history.replaceState(null, '', '/');
+      setProjectNotice('That project no longer exists. You have been returned to the project list.');
+      return;
+    }
+
     const storedProjectId = getProjectId(project);
     if (storedProjectId) {
       const matchedProject = projects.find((candidate) => candidate.id === storedProjectId);
       if (matchedProject && activeProject?.id !== matchedProject.id) {
         setActiveProject(matchedProject);
         return;
+      }
+      if (!matchedProject) {
+        clearProject();
+        setProjectNotice('Your previously selected project is no longer available.');
       }
     }
 
@@ -409,6 +437,14 @@ export function AppShell() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {projectNotice && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-warning/30 bg-warning-subtle px-4 py-3 text-sm text-text-secondary">
+            <span>{projectNotice}</span>
+            <button type="button" onClick={() => setProjectNotice(null)} className="text-text-secondary hover:text-text-primary" aria-label="Dismiss project notice">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         {shellLoading ? (
           <TabSpinner />
         ) : (

@@ -4,6 +4,7 @@ import './index.css'
 import './i18n'
 import { useThemeStore } from './store/useThemeStore'
 import App from './App.tsx'
+import { AppErrorBoundary } from './components/shared/AppErrorBoundary.tsx'
 
 // Initialize theme from persisted state
 const theme = useThemeStore.getState().theme;
@@ -22,8 +23,10 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Suspense fallback={<div className="min-h-screen bg-surface-secondary flex items-center justify-center"><div className="text-text-tertiary">Loading...</div></div>}>
-      <App />
-    </Suspense>
+    <AppErrorBoundary>
+      <Suspense fallback={<div className="min-h-screen bg-surface-secondary flex items-center justify-center"><div className="text-text-tertiary">Loading...</div></div>}>
+        <App />
+      </Suspense>
+    </AppErrorBoundary>
   </StrictMode>,
 )

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qatrial-v1';
+const CACHE_NAME = 'qatrial-v2';
 const STATIC_ASSETS = [
   '/',
   '/favicon.svg',

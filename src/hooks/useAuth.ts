@@ -28,6 +28,18 @@ export interface AuthState {
 const TOKEN_KEY = 'qatrial:token';
 const REFRESH_KEY = 'qatrial:refresh-token';
 
+function getTokenOrgId(token: string): string | null | undefined {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return undefined;
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='))) as { orgId?: unknown };
+    return typeof decoded.orgId === 'string' || decoded.orgId === null ? decoded.orgId : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // ── Context ─────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -36,8 +48,10 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
-  const [isLoading, setIsLoading] = useState<boolean>(() => !!localStorage.getItem(TOKEN_KEY));
+  // Do not expose a stored access token before it is validated. Rendering the
+  // shell during this gap was what allowed the auth/UI flip-flop.
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user && !!token;
 
@@ -53,6 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(REFRESH_KEY);
     setToken(null);
     setUser(null);
+  }, []);
+
+  const tokenMatchesUser = useCallback((accessToken: string, authenticatedUser: AuthUser) => {
+    const tokenOrgId = getTokenOrgId(accessToken);
+    return tokenOrgId !== undefined && tokenOrgId === authenticatedUser.orgId;
   }, []);
 
   // ── Refresh ─────────────────────────────────────────────────────────────
@@ -73,30 +92,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Validate existing token on mount ────────────────────────────────────
 
   useEffect(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
-    if (!storedToken) {
-      setIsLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
-    async function validate() {
+    async function boot() {
+      const storedToken = localStorage.getItem(TOKEN_KEY);
+      if (!storedToken) {
+        if (!cancelled) setIsLoading(false);
+        return;
+      }
+
       try {
         const res = await apiFetch<{ user: AuthUser }>('/auth/me');
+        if (!tokenMatchesUser(storedToken, res.user)) {
+          if (!cancelled) clearTokens();
+          return;
+        }
         if (!cancelled) {
+          setToken(storedToken);
           setUser(res.user);
         }
       } catch {
-        // Token might be expired — try refresh
+        // One refresh attempt is allowed for an expired token. If it cannot
+        // establish a consistent identity, logout is terminal until login.
         try {
-          await doRefresh();
+          const refreshedToken = await doRefresh();
           const res = await apiFetch<{ user: AuthUser }>('/auth/me');
+          if (!tokenMatchesUser(refreshedToken, res.user)) {
+            if (!cancelled) clearTokens();
+            return;
+          }
           if (!cancelled) {
+            setToken(refreshedToken);
             setUser(res.user);
           }
         } catch {
-          // Both failed — clear everything
+          // Clear once and remain logged out. This effect does not retry after
+          // logout, so an invalid/stale JWT cannot create an auth loop.
           if (!cancelled) {
             clearTokens();
           }
@@ -108,9 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    validate();
+    boot();
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [clearTokens, doRefresh, tokenMatchesUser]);
 
   // ── Login ───────────────────────────────────────────────────────────────
 
@@ -153,10 +184,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Refresh (public) ────────────────────────────────────────────────────
 
   const refreshTokenFn = useCallback(async () => {
-    await doRefresh();
+    const refreshedToken = await doRefresh();
     const res = await apiFetch<{ user: AuthUser }>('/auth/me');
+    if (!tokenMatchesUser(refreshedToken, res.user)) {
+      clearTokens();
+      throw new Error('Session no longer matches your organization');
+    }
     setUser(res.user);
-  }, [doRefresh]);
+  }, [clearTokens, doRefresh, tokenMatchesUser]);
 
   // ── Value ───────────────────────────────────────────────────────────────
 
