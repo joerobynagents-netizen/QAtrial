@@ -27,10 +27,13 @@
     "db:generate": "prisma generate --schema=server/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=server/prisma/schema.prisma",
     "db:push": "prisma db push --schema=server/prisma/schema.prisma",
-    "db:studio": "prisma studio --schema=server/prisma/schema.prisma"
+    "db:studio": "prisma studio --schema=server/prisma/schema.prisma",
+    "ship": "npm run build && node scripts/ship-verify.mjs",
+    "ship:verify": "node scripts/ship-verify.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.12",
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.6.0",
     "@tanstack/react-table": "^8.21.3",
     "bcryptjs": "^3.0.3",
