@@ -41,7 +41,7 @@
     "selectCountrySearch": "Search countries...",
     "selectVertical": "Select Industry Vertical",
     "selectVerticalDesc": "Choose your industry to get GxP-specific requirements and tests.",
-    "selectVerticalOptional": "Optional — skip for generic templates",
+    "selectVerticalOptional": "Optional â€” skip for generic templates",
     "projectInfo": "Project Information",
     "projectInfoDesc": "Basic information about your project.",
     "projectName": "Project Name",
@@ -64,36 +64,26 @@
     "createWithCounts": "Create Project ({{reqCount}} Reqs + {{testCount}} Tests)",
     "emptyStart": "Start Empty",
     "emptyStartDesc": "Only project metadata, no pre-built requirements or tests.",
-    "skipVertical": "Skip — use generic templates",
+    "skipVertical": "Skip â€” use generic templates",
     "loadDemo": "Load Demo",
     "demoAvailable": "Demo available",
     "selectAll": "Select All",
     "deselectAll": "Deselect All"
   },
   "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "actions": "Actions",
     "back": "Back",
     "next": "Next",
-    "cancel": "Cancel",
-    "save": "Save",
-    "delete": "Delete",
-    "search": "Search...",
-    "all": "All",
-    "noData": "No data",
-    "none": "None",
-    "loading": "Loading...",
-    "confirm": "Confirm",
-    "close": "Close",
-    "edit": "Edit",
-    "add": "Add",
-    "remove": "Remove",
     "yes": "Yes",
     "no": "No",
-    "required": "Required",
-    "created": "Created",
+    "none": "None",
+    "saving": "Saving...",
     "settings": "Settings",
-    "optional": "Optional",
-    "actions": "Actions",
-    "settings": "Settings"
+    "and": "and"
   },
   "requirements": {
     "id": "ID",
@@ -145,8 +135,8 @@
     "testStatusChart": "Test Status",
     "traceabilityMatrix": "Traceability Matrix",
     "traceabilityEmpty": "No data available. Create requirements and tests to see the matrix.",
-    "reqsTimesTests": "{{reqCount}} Reqs × {{testCount}} Tests",
-    "reqDownTestRight": "Req ↓ / Test →",
+    "reqsTimesTests": "{{reqCount}} Reqs Ã— {{testCount}} Tests",
+    "reqDownTestRight": "Req â†“ / Test â†’",
     "linksPerTest": "Links per Test",
     "links": "Links",
     "orphanedReqs": "Requirements without Tests ({{count}})",
@@ -174,7 +164,7 @@
     "testPassRate": "Test Pass Rate",
     "riskAssessed": "Risk Assessed",
     "signatureCompleteness": "Signature Completeness",
-    "criticalGapPenalty": "Critical gap detected — score penalized",
+    "criticalGapPenalty": "Critical gap detected â€” score penalized",
     "overallReadiness": "Overall Readiness: {{percent}}%",
     "totalClauses": "Total Clauses",
     "covered": "Covered",
@@ -345,12 +335,37 @@
     "noUserWarning": "No user logged in. Signature will be recorded as unverified. Log in for compliant electronic signatures."
   },
   "changeControl": {
-    "approvalRequired": "Approval Required",
-    "pendingApproval": "Pending Approval",
-    "revertedToDraft": "Reverted to Draft — re-approval needed",
-    "approve": "Approve",
-    "reject": "Reject",
-    "rejectReason": "Reason for rejection"
+    "title": "Change Control",
+    "create": "New Change Control",
+    "edit": "Edit Change Control",
+    "titleRequired": "Title is required",
+    "noItems": "No change controls yet",
+    "type": "Type",
+    "type_product": "Product",
+    "type_process": "Process",
+    "type_document": "Document",
+    "type_system": "System",
+    "type_supplier": "Supplier",
+    "description": "Description",
+    "justification": "Justification",
+    "riskLevel": "Risk Level",
+    "impactAssessment": "Impact Assessment",
+    "affectedDocuments": "Affected Documents",
+    "affectedTraining": "Affected Training",
+    "affectedValidation": "Affected Validation",
+    "commaSeparated": "Comma separated values",
+    "advanceTo": "Advance to {{status}}",
+    "tasks": "Implementation Tasks",
+    "noTasks": "No tasks added yet",
+    "taskTitle": "Task",
+    "taskAssignee": "Assignee",
+    "taskDue": "Due Date",
+    "taskStatus": "Status",
+    "newTaskPlaceholder": "New task title...",
+    "addTask": "Add",
+    "effectivenessVerification": "Effectiveness Verification",
+    "effectivenessVerified": "Effectiveness verified",
+    "verifyEffectiveness": "Verify Effectiveness"
   },
   "importExport": {
     "import": "Import",
@@ -422,47 +437,158 @@
     "SA": "Saudi Arabia"
   },
   "verticals": {
-    "pharma": { "name": "Pharmaceuticals", "focus": "GMP, GCP, GLP, GDP, GVP, GDocP" },
-    "biotech": { "name": "Biotechnology", "focus": "GMP (Biologics), GCP, GLP" },
-    "medical_devices": { "name": "Medical Devices", "focus": "QMSR, ISO 13485, IEC 62304, ISO 14971" },
-    "cro": { "name": "Clinical Research (CRO)", "focus": "GCP, GLP, GDocP" },
-    "clinical_lab": { "name": "Clinical Laboratories", "focus": "GLP, GDocP, ISO 15189" },
-    "logistics": { "name": "Logistics / GDP / GSP", "focus": "GDP, GSP" },
-    "software_it": { "name": "Software & IT (GAMP/CSV)", "focus": "GAMP 5, CSV, Part 11" },
-    "cosmetics": { "name": "Cosmetics / Chemical / Env.", "focus": "GMP, GLP, REACH" },
-    "aerospace": { "name": "Aerospace", "focus": "AS9100D, DO-178C" },
-    "chemical_env": { "name": "Chemical / Environmental", "focus": "GLP, REACH, CLP" }
+    "pharma": {
+      "name": "Pharmaceuticals",
+      "focus": "GMP, GCP, GLP, GDP, GVP, GDocP"
+    },
+    "biotech": {
+      "name": "Biotechnology",
+      "focus": "GMP (Biologics), GCP, GLP"
+    },
+    "medical_devices": {
+      "name": "Medical Devices",
+      "focus": "QMSR, ISO 13485, IEC 62304, ISO 14971"
+    },
+    "cro": {
+      "name": "Clinical Research (CRO)",
+      "focus": "GCP, GLP, GDocP"
+    },
+    "clinical_lab": {
+      "name": "Clinical Laboratories",
+      "focus": "GLP, GDocP, ISO 15189"
+    },
+    "logistics": {
+      "name": "Logistics / GDP / GSP",
+      "focus": "GDP, GSP"
+    },
+    "software_it": {
+      "name": "Software & IT (GAMP/CSV)",
+      "focus": "GAMP 5, CSV, Part 11"
+    },
+    "cosmetics": {
+      "name": "Cosmetics / Chemical / Env.",
+      "focus": "GMP, GLP, REACH"
+    },
+    "aerospace": {
+      "name": "Aerospace",
+      "focus": "AS9100D, DO-178C"
+    },
+    "chemical_env": {
+      "name": "Chemical / Environmental",
+      "focus": "GLP, REACH, CLP"
+    }
   },
   "modules": {
-    "audit_trail": { "name": "Audit Trail", "desc": "Event logging with timestamps and user identification" },
-    "e_signatures": { "name": "Electronic Signatures", "desc": "21 CFR Part 11 / EU Annex 11 compliant signatures" },
-    "data_integrity": { "name": "Data Integrity (ALCOA+)", "desc": "Attributable, Legible, Contemporaneous, Original, Accurate" },
-    "change_control": { "name": "Change Control", "desc": "Change requests, impact assessment, approval workflow" },
-    "capa": { "name": "CAPA", "desc": "Corrective and preventive actions with root cause analysis" },
-    "deviation": { "name": "Deviation Management", "desc": "Deviation recording, classification, investigation" },
-    "training": { "name": "Training Management", "desc": "Training plans, competency assessment, records" },
-    "supplier_qualification": { "name": "Supplier Qualification", "desc": "Supplier assessment, audit, approval, review" },
-    "complaint_handling": { "name": "Complaint Handling", "desc": "Intake, investigation, trending, reporting" },
-    "risk_management": { "name": "Risk Management", "desc": "Hazard identification, risk estimation and control" },
-    "document_control": { "name": "Document Control", "desc": "Version control, review/approval, distribution" },
-    "backup_dr": { "name": "Backup & Disaster Recovery", "desc": "Backup schedule, restore testing, business continuity" },
-    "access_control": { "name": "Access Control / SoD", "desc": "Role-based access, segregation of duties" },
-    "validation_csv": { "name": "Validation / CSV", "desc": "URS, FS, DS, IQ/OQ/PQ protocols" },
-    "traceability": { "name": "Traceability Matrix", "desc": "Full requirement → design → test traceability" },
-    "supplier_management": { "name": "Supplier Management", "desc": "Supplier assessment, qualification, and ongoing oversight" },
-    "backup_recovery": { "name": "Backup & Recovery", "desc": "Backup schedule, restore testing, disaster recovery" },
-    "data_migration": { "name": "Data Migration", "desc": "Data migration planning, validation, and verification" },
-    "reporting": { "name": "Reporting", "desc": "Regulatory and quality reporting, dashboards, metrics" }
+    "audit_trail": {
+      "name": "Audit Trail",
+      "desc": "Event logging with timestamps and user identification"
+    },
+    "e_signatures": {
+      "name": "Electronic Signatures",
+      "desc": "21 CFR Part 11 / EU Annex 11 compliant signatures"
+    },
+    "data_integrity": {
+      "name": "Data Integrity (ALCOA+)",
+      "desc": "Attributable, Legible, Contemporaneous, Original, Accurate"
+    },
+    "change_control": {
+      "name": "Change Control",
+      "desc": "Change requests, impact assessment, approval workflow"
+    },
+    "capa": {
+      "name": "CAPA",
+      "desc": "Corrective and preventive actions with root cause analysis"
+    },
+    "deviation": {
+      "name": "Deviation Management",
+      "desc": "Deviation recording, classification, investigation"
+    },
+    "training": {
+      "name": "Training Management",
+      "desc": "Training plans, competency assessment, records"
+    },
+    "supplier_qualification": {
+      "name": "Supplier Qualification",
+      "desc": "Supplier assessment, audit, approval, review"
+    },
+    "complaint_handling": {
+      "name": "Complaint Handling",
+      "desc": "Intake, investigation, trending, reporting"
+    },
+    "risk_management": {
+      "name": "Risk Management",
+      "desc": "Hazard identification, risk estimation and control"
+    },
+    "document_control": {
+      "name": "Document Control",
+      "desc": "Version control, review/approval, distribution"
+    },
+    "backup_dr": {
+      "name": "Backup & Disaster Recovery",
+      "desc": "Backup schedule, restore testing, business continuity"
+    },
+    "access_control": {
+      "name": "Access Control / SoD",
+      "desc": "Role-based access, segregation of duties"
+    },
+    "validation_csv": {
+      "name": "Validation / CSV",
+      "desc": "URS, FS, DS, IQ/OQ/PQ protocols"
+    },
+    "traceability": {
+      "name": "Traceability Matrix",
+      "desc": "Full requirement â†’ design â†’ test traceability"
+    },
+    "supplier_management": {
+      "name": "Supplier Management",
+      "desc": "Supplier assessment, qualification, and ongoing oversight"
+    },
+    "backup_recovery": {
+      "name": "Backup & Recovery",
+      "desc": "Backup schedule, restore testing, disaster recovery"
+    },
+    "data_migration": {
+      "name": "Data Migration",
+      "desc": "Data migration planning, validation, and verification"
+    },
+    "reporting": {
+      "name": "Reporting",
+      "desc": "Regulatory and quality reporting, dashboards, metrics"
+    }
   },
   "projectTypes": {
-    "software": { "name": "Software / Web App", "desc": "Software development and validation" },
-    "embedded": { "name": "Embedded / IoT", "desc": "Hardware, firmware, IoT devices" },
-    "quality_system": { "name": "Quality System (QMS)", "desc": "QMS setup, SOPs, process controls" },
-    "validation": { "name": "Validation", "desc": "IQ/OQ/PQ, CSV, method validation" },
-    "clinical": { "name": "Clinical", "desc": "Clinical studies, trials, investigations" },
-    "compliance": { "name": "Compliance / Audit", "desc": "Regulatory compliance and audit preparation" },
-    "supplier_quality": { "name": "Supplier Quality", "desc": "Supplier qualification and oversight" },
-    "empty": { "name": "Empty", "desc": "No templates — start from scratch" }
+    "software": {
+      "name": "Software / Web App",
+      "desc": "Software development and validation"
+    },
+    "embedded": {
+      "name": "Embedded / IoT",
+      "desc": "Hardware, firmware, IoT devices"
+    },
+    "quality_system": {
+      "name": "Quality System (QMS)",
+      "desc": "QMS setup, SOPs, process controls"
+    },
+    "validation": {
+      "name": "Validation",
+      "desc": "IQ/OQ/PQ, CSV, method validation"
+    },
+    "clinical": {
+      "name": "Clinical",
+      "desc": "Clinical studies, trials, investigations"
+    },
+    "compliance": {
+      "name": "Compliance / Audit",
+      "desc": "Regulatory compliance and audit preparation"
+    },
+    "supplier_quality": {
+      "name": "Supplier Quality",
+      "desc": "Supplier qualification and oversight"
+    },
+    "empty": {
+      "name": "Empty",
+      "desc": "No templates â€” start from scratch"
+    }
   },
   "auth": {
     "login": "Log In",
@@ -769,13 +895,13 @@
     "orScratch": "Or start from scratch",
     "modules": "{{count}} modules included",
     "fdaCsv": "FDA Software Validation (GAMP 5)",
-    "fdaCsvDesc": "21 CFR Part 11, GAMP 5, CSV — complete software validation setup",
+    "fdaCsvDesc": "21 CFR Part 11, GAMP 5, CSV â€” complete software validation setup",
     "euMdr": "EU MDR Medical Device QMS",
-    "euMdrDesc": "ISO 13485, ISO 14971, IEC 62304 — full medical device quality system",
+    "euMdrDesc": "ISO 13485, ISO 14971, IEC 62304 â€” full medical device quality system",
     "fdaGmp": "FDA GMP Pharmaceutical Quality",
-    "fdaGmpDesc": "21 CFR 210/211, cGMP — pharmaceutical manufacturing quality system",
+    "fdaGmpDesc": "21 CFR 210/211, cGMP â€” pharmaceutical manufacturing quality system",
     "isoGdpr": "ISO 27001 + GDPR Compliance",
-    "isoGdprDesc": "Information security + data privacy — IT compliance framework"
+    "isoGdprDesc": "Information security + data privacy â€” IT compliance framework"
   },
   "auditMode": {
     "title": "Audit View",
@@ -1051,6 +1177,7 @@
     "type_policy": "Policy",
     "type_form": "Form",
     "type_specification": "Specification",
+    "type_template": "Template",
     "version": "Version",
     "status": "Status",
     "status_draft": "Draft",
@@ -1070,7 +1197,11 @@
     "majorVersion": "Major version increment",
     "versionHistory": "Version History",
     "approvedBy": "Approved by",
-    "effectiveDate": "Effective date"
+    "effectiveDate": "Effective date",
+    "type_plan": "Plan",
+    "type_report": "Report",
+    "type_record": "Record",
+    "type_other": "Other"
   },
   "systems": {
     "title": "Computerized System Inventory",
@@ -1358,39 +1489,6 @@
     "trendUp": "Trending up",
     "trendDown": "Trending down",
     "trendFlat": "Stable"
-  },
-  "changeControl": {
-    "title": "Change Control",
-    "create": "New Change Control",
-    "edit": "Edit Change Control",
-    "titleRequired": "Title is required",
-    "noItems": "No change controls yet",
-    "type": "Type",
-    "type_product": "Product",
-    "type_process": "Process",
-    "type_document": "Document",
-    "type_system": "System",
-    "type_supplier": "Supplier",
-    "description": "Description",
-    "justification": "Justification",
-    "riskLevel": "Risk Level",
-    "impactAssessment": "Impact Assessment",
-    "affectedDocuments": "Affected Documents",
-    "affectedTraining": "Affected Training",
-    "affectedValidation": "Affected Validation",
-    "commaSeparated": "Comma separated values",
-    "advanceTo": "Advance to {{status}}",
-    "tasks": "Implementation Tasks",
-    "noTasks": "No tasks added yet",
-    "taskTitle": "Task",
-    "taskAssignee": "Assignee",
-    "taskDue": "Due Date",
-    "taskStatus": "Status",
-    "newTaskPlaceholder": "New task title...",
-    "addTask": "Add",
-    "effectivenessVerification": "Effectiveness Verification",
-    "effectivenessVerified": "Effectiveness verified",
-    "verifyEffectiveness": "Verify Effectiveness"
   },
   "deviations": {
     "title": "Deviations",
@@ -1694,20 +1792,5 @@
     "acknowledged": "Acknowledged",
     "version": "Version",
     "noDistributions": "No distributions yet."
-  },
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "actions": "Actions",
-    "back": "Back",
-    "next": "Next",
-    "yes": "Yes",
-    "no": "No",
-    "none": "None",
-    "saving": "Saving...",
-    "settings": "Settings",
-    "and": "and"
   }
 }

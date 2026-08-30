@@ -162,6 +162,11 @@ export function DocumentManager() {
     policy: 'bg-green-100 text-green-700',
     form: 'bg-orange-100 text-orange-700',
     specification: 'bg-red-100 text-red-700',
+    template: 'bg-teal-100 text-teal-700',
+    plan: 'bg-indigo-100 text-indigo-700',
+    report: 'bg-cyan-100 text-cyan-700',
+    record: 'bg-amber-100 text-amber-700',
+    other: 'bg-slate-100 text-slate-700',
   };
 
   const toggleExpand = (id: string) => {
@@ -229,6 +234,11 @@ export function DocumentManager() {
               <option value="policy">{t('documents.type_policy')}</option>
               <option value="form">{t('documents.type_form')}</option>
               <option value="specification">{t('documents.type_specification')}</option>
+              <option value="template">{t('documents.type_template')}</option>
+              <option value="plan">{t('documents.type_plan')}</option>
+              <option value="report">{t('documents.type_report')}</option>
+              <option value="record">{t('documents.type_record')}</option>
+              <option value="other">{t('documents.type_other')}</option>
             </select>
           </div>
           <textarea
