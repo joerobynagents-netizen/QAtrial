@@ -42,6 +42,7 @@ export function DocumentManager() {
   const [expandedDoc, setExpandedDoc] = useState<Document | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showNewVersionForm, setShowNewVersionForm] = useState<string | null>(null);
+  const [showSuperseded, setShowSuperseded] = useState(false);
   const projectId = getProjectId(project);
   const canEdit = roleHasPermission(user?.role, 'canEdit');
   const canApprove = roleHasPermission(user?.role, 'canApprove');
@@ -81,6 +82,8 @@ export function DocumentManager() {
   useEffect(() => {
     fetchDocuments();
   }, [projectId, token]);
+
+  const visibleDocs = showSuperseded ? documents : documents.filter((d) => d.status !== 'superseded');
 
   const handleCreate = async () => {
     if (!projectId || !token || !newDoc.title || !canEdit) return;
@@ -261,8 +264,18 @@ export function DocumentManager() {
         </div>
       )}
 
+      {/* Current-version view toggle */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowSuperseded(!showSuperseded)}
+          className="px-3 py-1.5 text-sm font-medium text-text-secondary bg-surface border border-border rounded-lg hover:bg-surface-hover"
+        >
+          {showSuperseded ? t('documents.hideSuperseded') : t('documents.showSuperseded')}
+        </button>
+      </div>
+
       {/* Document List */}
-      {documents.length === 0 ? (
+      {visibleDocs.length === 0 ? (
         <div className="bg-surface rounded-xl border border-border p-8 text-center">
           <FileText className="w-10 h-10 text-text-tertiary mx-auto mb-2" />
           <p className="text-text-tertiary">{t('documents.noDocuments')}</p>
@@ -281,7 +294,7 @@ export function DocumentManager() {
               </tr>
             </thead>
             <tbody>
-              {documents.map((doc) => (
+              {visibleDocs.map((doc) => (
                 <Fragment key={doc.id}>
                   <tr className="border-b border-border hover:bg-surface-hover transition-colors">
                     <td className="px-4 py-3 text-text-primary font-medium">{doc.title}</td>

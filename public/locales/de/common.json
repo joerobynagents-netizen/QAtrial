@@ -1000,7 +1000,9 @@
     "type_report": "Bericht",
     "type_record": "Aufzeichnung",
     "type_other": "Sonstiges",
-    "type_flow": "Prozessfluss"
+    "type_flow": "Prozessfluss",
+    "showSuperseded": "Supersedierte Versionen anzeigen",
+    "hideSuperseded": "Nur aktuelle Versionen anzeigen"
   },
   "systems": {
     "title": "Computerisierte Systeme",

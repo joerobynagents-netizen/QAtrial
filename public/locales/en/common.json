@@ -1202,7 +1202,9 @@
     "type_report": "Report",
     "type_record": "Record",
     "type_other": "Other",
-    "type_flow": "Process Flow"
+    "type_flow": "Process Flow",
+    "showSuperseded": "Show superseded versions",
+    "hideSuperseded": "Show current versions only"
   },
   "systems": {
     "title": "Computerized System Inventory",
