@@ -166,6 +166,7 @@ export function DocumentManager() {
     plan: 'bg-indigo-100 text-indigo-700',
     report: 'bg-cyan-100 text-cyan-700',
     record: 'bg-amber-100 text-amber-700',
+    flow: 'bg-fuchsia-100 text-fuchsia-700',
     other: 'bg-slate-100 text-slate-700',
   };
 
@@ -238,6 +239,7 @@ export function DocumentManager() {
               <option value="plan">{t('documents.type_plan')}</option>
               <option value="report">{t('documents.type_report')}</option>
               <option value="record">{t('documents.type_record')}</option>
+              <option value="flow">{t('documents.type_flow')}</option>
               <option value="other">{t('documents.type_other')}</option>
             </select>
           </div>

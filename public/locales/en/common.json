@@ -1201,7 +1201,8 @@
     "type_plan": "Plan",
     "type_report": "Report",
     "type_record": "Record",
-    "type_other": "Other"
+    "type_other": "Other",
+    "type_flow": "Process Flow"
   },
   "systems": {
     "title": "Computerized System Inventory",

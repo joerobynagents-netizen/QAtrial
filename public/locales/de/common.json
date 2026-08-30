@@ -999,7 +999,8 @@
     "type_plan": "Plan",
     "type_report": "Bericht",
     "type_record": "Aufzeichnung",
-    "type_other": "Sonstiges"
+    "type_other": "Sonstiges",
+    "type_flow": "Prozessfluss"
   },
   "systems": {
     "title": "Computerisierte Systeme",
