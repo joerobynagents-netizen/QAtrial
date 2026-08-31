@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createRequire } from 'node:module';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import type { JwtPayload } from './middleware/auth.js';
 
@@ -172,7 +174,7 @@ describe('server app contracts', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       status: 'ok',
-      version: '5.0.0',
+      version: createRequire(import.meta.url)('../package.json').version,
     });
   });
 
@@ -467,6 +469,8 @@ describe('server app contracts', () => {
     };
 
     prisma.requirement.findUnique.mockResolvedValue({ projectId: 'project-1' });
+    // DEOX SUB-1 patch (JOE-2435): route access-check calls project.findFirst (as every other test mocks); missing mock → undefined → 404
+    prisma.project.findFirst.mockResolvedValue({ id: 'project-1', name: 'Project 1', workspaceId: 'workspace-1' });
     prisma.approval.findFirst
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(pendingApproval);
@@ -521,6 +525,8 @@ describe('server app contracts', () => {
 
     prisma.approval.findFirst.mockResolvedValue(pendingApproval);
     prisma.approval.findUnique.mockResolvedValue(pendingApproval);
+    // DEOX SUB-1 patch (JOE-2435): route access-check calls project.findFirst; missing mock → 404
+    prisma.project.findFirst.mockResolvedValue({ id: 'project-1', name: 'Project 1', workspaceId: 'workspace-1' });
 
     const response = await requestJson('/api/approvals/requirement/req-1/reject', {
       user: { ...baseUser, userId: 'reviewer-1', email: 'reviewer@example.com', role: 'reviewer' },
@@ -638,7 +644,8 @@ describe('server app contracts', () => {
   });
 
   it('lists, measures completeness, downloads, and deletes evidence records', async () => {
-    const storagePath = path.join('/tmp', `qatrial-evidence-${Date.now()}-${Math.random().toString(16).slice(2)}.txt`);
+    // DEOX SUB-1 patch (JOE-2435): use os.tmpdir() — hardcoded '/tmp' resolves to <drive>\tmp on Windows and ENOENTs
+    const storagePath = path.join(os.tmpdir(), `qatrial-evidence-${Date.now()}-${Math.random().toString(16).slice(2)}.txt`);
     fs.writeFileSync(storagePath, 'hello evidence');
 
     const evidenceRecord = {
@@ -652,6 +659,8 @@ describe('server app contracts', () => {
       entityId: 'req-1',
     };
 
+    // DEOX SUB-1 patch (JOE-2435): route access-check calls project.findFirst; missing mock → { evidence: [] }
+    prisma.project.findFirst.mockResolvedValue({ id: 'project-1', name: 'Project 1', workspaceId: 'workspace-1' });
     prisma.evidence.findMany
       .mockResolvedValueOnce([evidenceRecord])
       .mockResolvedValueOnce([

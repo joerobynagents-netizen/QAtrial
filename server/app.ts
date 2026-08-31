@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -121,7 +122,8 @@ export function createApp() {
   app.route('/api/search', searchRoutes);
   app.route('/api/quizzes', quizRoutes);
 
-  app.get('/api/health', (c) => c.json({ status: 'ok', version: '5.0.0' }));
+  const { version: appVersion } = createRequire(import.meta.url)('../package.json');
+  app.get('/api/health', (c) => c.json({ status: 'ok', version: appVersion }));
 
   if (process.env.NODE_ENV === 'production') {
     const distPath = path.resolve(process.cwd(), 'dist');
