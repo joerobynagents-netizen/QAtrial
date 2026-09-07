@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import * as fs from 'fs';
@@ -9,6 +10,8 @@ type MockFn = ReturnType<typeof vi.fn>;
 type ModelMock = Record<string, MockFn>;
 
 const { prisma, dispatchWebhookMock, bcryptCompareMock, bcryptHashMock } = vi.hoisted(() => {
+  // These contracts use mocked persistence and must not require deployment secrets.
+  vi.stubEnv('JWT_SECRET', 'qatrial-contract-tests-only-secret-32-characters');
   const createModelMock = () => ({
     findMany: vi.fn(),
     findUnique: vi.fn(),
