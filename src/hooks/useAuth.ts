@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { createElement, type ReactNode } from 'react';
 import { apiFetch } from '../lib/apiClient';
 
@@ -50,6 +50,7 @@ const AuthContext = createContext<AuthState | null>(null);
 // ── Provider ────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const sessionGeneration = useRef(0);
   const [user, setUser] = useState<AuthUser | null>(null);
   // Do not expose a stored access token before it is validated. Rendering the
   // shell during this gap was what allowed the auth/UI flip-flop.
@@ -67,10 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearTokens = useCallback(() => {
+    sessionGeneration.current += 1;
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
     setToken(null);
     setUser(null);
+    setIsLoading(false);
+    setBootError(null);
   }, []);
 
   const tokenMatchesUser = useCallback((accessToken: string, authenticatedUser: AuthUser) => {
@@ -90,14 +94,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signal,
     });
 
-    storeTokens(res.accessToken, res.refreshToken);
-    return res.accessToken;
-  }, [storeTokens]);
+    return res;
+  }, []);
 
   // ── Validate existing token on mount ────────────────────────────────────
 
   useEffect(() => {
     let cancelled = false;
+    const generation = sessionGeneration.current;
+    const isCurrent = () => !cancelled && generation === sessionGeneration.current;
     const bootController = new AbortController();
     let timedOut = false;
     const bootTimer = window.setTimeout(() => {
@@ -109,64 +114,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedToken = localStorage.getItem(TOKEN_KEY);
       if (!storedToken) {
         window.clearTimeout(bootTimer);
-        if (!cancelled) setIsLoading(false);
+        if (isCurrent()) setIsLoading(false);
         return;
       }
 
       try {
         const res = await apiFetch<{ user: AuthUser }>('/auth/me', { signal: bootController.signal });
         if (!tokenMatchesUser(storedToken, res.user)) {
-          if (!cancelled) clearTokens();
+          if (isCurrent()) clearTokens();
           return;
         }
-        if (!cancelled) {
+        if (isCurrent()) {
           setToken(storedToken);
           setUser(res.user);
         }
       } catch {
+        if (!isCurrent()) return;
         if (timedOut) {
-          if (!cancelled) setBootError('Sign-in verification timed out after 10 seconds.');
+          setBootError('Sign-in verification timed out after 10 seconds.');
           return;
         }
         // One refresh attempt is allowed for an expired token. If it cannot
         // establish a consistent identity, logout is terminal until login.
         try {
-          const refreshedToken = await doRefresh(bootController.signal);
-          const res = await apiFetch<{ user: AuthUser }>('/auth/me', { signal: bootController.signal });
-          if (!tokenMatchesUser(refreshedToken, res.user)) {
-            if (!cancelled) clearTokens();
+          const refreshed = await doRefresh(bootController.signal);
+          if (!isCurrent()) return;
+          const res = await apiFetch<{ user: AuthUser }>('/auth/me', {
+            signal: bootController.signal,
+            headers: { Authorization: `Bearer ${refreshed.accessToken}` },
+          });
+          if (!tokenMatchesUser(refreshed.accessToken, res.user)) {
+            if (isCurrent()) clearTokens();
             return;
           }
-          if (!cancelled) {
-            setToken(refreshedToken);
+          if (isCurrent()) {
+            storeTokens(refreshed.accessToken, refreshed.refreshToken);
             setUser(res.user);
           }
         } catch {
           if (timedOut) {
-            if (!cancelled) setBootError('Session refresh timed out after 10 seconds.');
+            if (isCurrent()) setBootError('Session refresh timed out after 10 seconds.');
             return;
           }
           // Clear once and remain logged out. This effect does not retry after
           // logout, so an invalid/stale JWT cannot create an auth loop.
-          if (!cancelled) {
+          if (isCurrent()) {
             clearTokens();
           }
         }
       } finally {
         window.clearTimeout(bootTimer);
-        if (!cancelled) {
+        if (isCurrent()) {
           setIsLoading(false);
         }
       }
     }
 
     boot();
-    return () => { cancelled = true; window.clearTimeout(bootTimer); bootController.abort(); };
-  }, [clearTokens, doRefresh, tokenMatchesUser]);
+    return () => {
+      cancelled = true;
+      sessionGeneration.current += 1;
+      window.clearTimeout(bootTimer);
+      bootController.abort();
+    };
+  }, [clearTokens, doRefresh, storeTokens, tokenMatchesUser]);
 
   // ── Login ───────────────────────────────────────────────────────────────
 
   const login = useCallback(async (email: string, password: string) => {
+    const generation = ++sessionGeneration.current;
     const res = await apiFetch<{
       user: AuthUser;
       accessToken: string;
@@ -176,13 +192,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, password }),
     });
 
+    if (generation !== sessionGeneration.current) return;
     storeTokens(res.accessToken, res.refreshToken);
     setUser(res.user);
+    setIsLoading(false);
+    setBootError(null);
   }, [storeTokens]);
 
   // ── Register ────────────────────────────────────────────────────────────
 
   const register = useCallback(async (email: string, password: string, name: string) => {
+    const generation = ++sessionGeneration.current;
     const res = await apiFetch<{
       user: AuthUser;
       accessToken: string;
@@ -192,8 +212,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, password, name }),
     });
 
+    if (generation !== sessionGeneration.current) return;
     storeTokens(res.accessToken, res.refreshToken);
     setUser(res.user);
+    setIsLoading(false);
+    setBootError(null);
   }, [storeTokens]);
 
   // ── Logout ──────────────────────────────────────────────────────────────
@@ -205,14 +228,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Refresh (public) ────────────────────────────────────────────────────
 
   const refreshTokenFn = useCallback(async () => {
-    const refreshedToken = await doRefresh();
-    const res = await apiFetch<{ user: AuthUser }>('/auth/me');
-    if (!tokenMatchesUser(refreshedToken, res.user)) {
+    const generation = sessionGeneration.current;
+    const refreshed = await doRefresh();
+    if (generation !== sessionGeneration.current) return;
+    const res = await apiFetch<{ user: AuthUser }>('/auth/me', {
+      headers: { Authorization: `Bearer ${refreshed.accessToken}` },
+    });
+    if (generation !== sessionGeneration.current) return;
+    if (!tokenMatchesUser(refreshed.accessToken, res.user)) {
       clearTokens();
       throw new Error('Session no longer matches your organization');
     }
+    storeTokens(refreshed.accessToken, refreshed.refreshToken);
     setUser(res.user);
-  }, [clearTokens, doRefresh, tokenMatchesUser]);
+  }, [clearTokens, doRefresh, storeTokens, tokenMatchesUser]);
 
   // ── Value ───────────────────────────────────────────────────────────────
 
