@@ -94,7 +94,7 @@ vi.mock('bcryptjs', () => ({
 import { app } from './app.js';
 import { signAccessToken } from './middleware/auth.js';
 
-const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+let evidenceTempDir: string;
 const baseUser: JwtPayload = {
   userId: 'user-1',
   email: 'qa@example.com',
@@ -150,6 +150,7 @@ async function requestJson(
 }
 
 beforeEach(() => {
+  evidenceTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qatrial-contract-evidence-'));
   dispatchWebhookMock.mockReset();
   bcryptCompareMock.mockReset();
   bcryptHashMock.mockReset();
@@ -165,9 +166,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  if (fs.existsSync(uploadsRoot)) {
-    fs.rmSync(uploadsRoot, { recursive: true, force: true });
-  }
+  // Only remove the directory this test created, never the application's uploads.
+  fs.rmSync(evidenceTempDir, { recursive: true, force: true });
 });
 
 describe('server app contracts', () => {
@@ -647,8 +647,7 @@ describe('server app contracts', () => {
   });
 
   it('lists, measures completeness, downloads, and deletes evidence records', async () => {
-    // DEOX SUB-1 patch (JOE-2435): use os.tmpdir() — hardcoded '/tmp' resolves to <drive>\tmp on Windows and ENOENTs
-    const storagePath = path.join(os.tmpdir(), `qatrial-evidence-${Date.now()}-${Math.random().toString(16).slice(2)}.txt`);
+    const storagePath = path.join(evidenceTempDir, 'evidence.txt');
     fs.writeFileSync(storagePath, 'hello evidence');
 
     const evidenceRecord = {
