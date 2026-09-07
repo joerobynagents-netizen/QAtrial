@@ -9,8 +9,8 @@ export async function logAudit(params: {
   previousValue?: any;
   newValue?: any;
   reason?: string;
-}): Promise<void> {
-  await prisma.auditLog.create({
+}, client: Pick<typeof prisma, 'auditLog'> = prisma): Promise<void> {
+  await client.auditLog.create({
     data: {
       projectId: params.projectId,
       userId: params.userId,

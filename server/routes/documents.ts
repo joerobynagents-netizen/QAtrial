@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Prisma } from '../generated/prisma/index.js';
 import { prisma } from '../lib/prisma.js';
 import { findAccessibleProject } from '../lib/projectAccess.js';
 import { authMiddleware, getUser, requirePermission, roleHasPermission } from '../middleware/auth.js';
@@ -8,6 +9,8 @@ import { dispatchWebhook } from '../services/webhook.service.js';
 const documents = new Hono();
 
 documents.use('*', authMiddleware);
+
+class DocumentConflictError extends Error {}
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['in_review'],
@@ -84,35 +87,35 @@ documents.post('/', requirePermission('canEdit'), async (c) => {
     const project = await findAccessibleProject(body.projectId, user.orgId);
     if (!project) return c.json({ message: 'Project not found' }, 404);
 
-    const doc = await prisma.document.create({
-      data: {
+    const doc = await prisma.$transaction(async (tx) => {
+      const created = await tx.document.create({
+        data: {
+          projectId: body.projectId,
+          title: body.title,
+          type: body.type ?? 'sop',
+          currentVersion: '1.0',
+          status: 'draft',
+          createdBy: user.userId,
+          versions: {
+            create: {
+              version: '1.0',
+              content: body.content ?? '',
+              changeReason: 'Initial version',
+              author: user.userId,
+            },
+          },
+        },
+      });
+
+      await logAudit({
         projectId: body.projectId,
-        title: body.title,
-        type: body.type ?? 'sop',
-        currentVersion: '1.0',
-        status: 'draft',
-        createdBy: user.userId,
-      },
-    });
-
-    // Create initial version
-    await prisma.documentVersion.create({
-      data: {
-        documentId: doc.id,
-        version: '1.0',
-        content: body.content ?? '',
-        changeReason: 'Initial version',
-        author: user.userId,
-      },
-    });
-
-    await logAudit({
-      projectId: body.projectId,
-      userId: user.userId,
-      action: 'create',
-      entityType: 'document',
-      entityId: doc.id,
-      newValue: doc,
+        userId: user.userId,
+        action: 'create',
+        entityType: 'document',
+        entityId: created.id,
+        newValue: created,
+      }, tx);
+      return created;
     });
 
     if (user.orgId) {
@@ -213,47 +216,65 @@ documents.post('/:id/versions', requirePermission('canEdit'), async (c) => {
     const project = await findAccessibleProject(doc.projectId, user.orgId);
     if (!project) return c.json({ message: 'Document not found' }, 404);
 
-    if (!body.changeReason) {
+    if (typeof body.changeReason !== 'string' || !body.changeReason.trim()) {
       return c.json({ message: 'changeReason is required for new version' }, 400);
     }
 
     // Increment version
+    if (!/^\d+\.\d+$/.test(doc.currentVersion)) {
+      throw new DocumentConflictError('Current document version is invalid');
+    }
     const currentParts = doc.currentVersion.split('.');
     const major = parseInt(currentParts[0], 10);
     const minor = parseInt(currentParts[1] || '0', 10);
+    if (!Number.isSafeInteger(major + 1) || !Number.isSafeInteger(minor + 1)) {
+      throw new DocumentConflictError('Current document version is invalid');
+    }
     const newVersion = body.majorVersion ? `${major + 1}.0` : `${major}.${minor + 1}`;
 
-    const version = await prisma.documentVersion.create({
-      data: {
-        documentId: id,
-        version: newVersion,
-        content: body.content ?? doc.versions[0]?.content ?? '',
-        changeReason: body.changeReason,
-        author: user.userId,
-      },
-    });
+    const version = await prisma.$transaction(async (tx) => {
+      // Lock the document and reject a writer that read an older version/status.
+      const claimed = await tx.document.updateMany({
+        where: { id, currentVersion: doc.currentVersion, status: doc.status, updatedAt: doc.updatedAt },
+        data: { currentVersion: newVersion, status: 'draft' },
+      });
+      if (claimed.count !== 1) throw new DocumentConflictError('Document changed; reload before creating a version');
 
-    // Update document's current version and reset to draft
-    await prisma.document.update({
-      where: { id },
-      data: {
-        currentVersion: newVersion,
-        status: 'draft',
-      },
-    });
+      const current = await tx.documentVersion.findFirst({
+        where: { documentId: id, version: doc.currentVersion },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (!current) throw new DocumentConflictError('Current document version is missing');
+      const duplicate = await tx.documentVersion.findFirst({
+        where: { documentId: id, version: newVersion },
+      });
+      if (duplicate) throw new DocumentConflictError('Version history conflicts with the current document version');
 
-    await logAudit({
-      projectId: doc.projectId,
-      userId: user.userId,
-      action: 'create',
-      entityType: 'document_version',
-      entityId: version.id,
-      newValue: version,
-      reason: body.changeReason,
+      const created = await tx.documentVersion.create({
+        data: {
+          documentId: id,
+          version: newVersion,
+          content: body.content ?? current.content,
+          changeReason: body.changeReason,
+          author: user.userId,
+        },
+      });
+
+      await logAudit({
+        projectId: doc.projectId,
+        userId: user.userId,
+        action: 'create',
+        entityType: 'document_version',
+        entityId: created.id,
+        newValue: created,
+        reason: body.changeReason,
+      }, tx);
+      return created;
     });
 
     return c.json({ version }, 201);
   } catch (error: any) {
+    if (error instanceof DocumentConflictError) return c.json({ message: error.message }, 409);
     console.error('Create document version error:', error);
     return c.json({ message: 'Failed to create document version' }, 500);
   }
@@ -293,11 +314,20 @@ documents.put('/:id/review', async (c) => {
       return c.json({ message: `Insufficient permissions: requires ${requiredPermission}` }, 403);
     }
 
-    const updateData: any = { status: targetStatus };
+    const updated = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.document.updateMany({
+        where: { id, currentVersion: doc.currentVersion, status: doc.status, updatedAt: doc.updatedAt },
+        data: { status: targetStatus },
+      });
+      if (claimed.count !== 1) throw new DocumentConflictError('Document changed; reload before reviewing');
 
-    // Update latest version with reviewer/approver info
-    if (doc.versions.length > 0) {
-      const versionUpdate: any = {};
+      const current = await tx.documentVersion.findFirst({
+        where: { documentId: id, version: doc.currentVersion },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (!current) throw new DocumentConflictError('Current document version is missing');
+
+      const versionUpdate: Prisma.DocumentVersionUpdateInput = {};
       if (targetStatus === 'in_review') {
         versionUpdate.reviewedBy = null; // Reset reviewer
       } else if (targetStatus === 'approved') {
@@ -307,26 +337,22 @@ documents.put('/:id/review', async (c) => {
       }
 
       if (Object.keys(versionUpdate).length > 0) {
-        await prisma.documentVersion.update({
-          where: { id: doc.versions[0].id },
+        await tx.documentVersion.update({
+          where: { id: current.id },
           data: versionUpdate,
         });
       }
-    }
 
-    const updated = await prisma.document.update({
-      where: { id },
-      data: updateData,
-    });
-
-    await logAudit({
-      projectId: doc.projectId,
-      userId: user.userId,
-      action: 'status_change',
-      entityType: 'document',
-      entityId: id,
-      previousValue: { status: doc.status },
-      newValue: { status: targetStatus },
+      await logAudit({
+        projectId: doc.projectId,
+        userId: user.userId,
+        action: 'status_change',
+        entityType: 'document',
+        entityId: id,
+        previousValue: { status: doc.status },
+        newValue: { status: targetStatus },
+      }, tx);
+      return tx.document.findUniqueOrThrow({ where: { id } });
     });
 
     if (user.orgId) {
@@ -339,6 +365,7 @@ documents.put('/:id/review', async (c) => {
 
     return c.json({ document: updated });
   } catch (error: any) {
+    if (error instanceof DocumentConflictError) return c.json({ message: error.message }, 409);
     console.error('Document review error:', error);
     return c.json({ message: 'Failed to update document review status' }, 500);
   }
