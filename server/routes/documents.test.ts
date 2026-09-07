@@ -208,4 +208,30 @@ describe('document version transactions', () => {
     expect(state.doc).toMatchObject({ currentVersion: '1.1', status: 'draft' });
     expect(state.versions.every((v) => !v.approvedBy)).toBe(true);
   });
+
+  it.each(['retire', 'supersede'])('rejects a stale %s request after a new revision', async (action) => {
+    state.doc!.status = 'effective';
+    // Complete the revision after the terminal transition reads its snapshot.
+    db.project.findFirst.mockImplementationOnce(async () => {
+      expect((await request('/doc-1/versions', { changeReason: 'Revision' })).status).toBe(201);
+      return { id: 'project-1' };
+    });
+    expect((await request(`/doc-1/${action}`, {}, 'PUT')).status).toBe(409);
+    expect(state.doc).toMatchObject({ currentVersion: '1.1', status: 'draft' });
+  });
+
+  it.each(['retire', 'supersede'])('rolls back %s when the audit write fails', async (action) => {
+    state.doc!.status = 'effective';
+    const before = structuredClone(state);
+    failAt = 'audit';
+    expect((await request(`/doc-1/${action}`, {}, 'PUT')).status).toBe(500);
+    expect(state).toEqual(before);
+  });
+
+  it.each([['retire', 'retired'], ['supersede', 'superseded']])('commits %s with its audit entry', async (action, status) => {
+    state.doc!.status = 'effective';
+    expect((await request(`/doc-1/${action}`, {}, 'PUT')).status).toBe(200);
+    expect(state.doc?.status).toBe(status);
+    expect(state.audits).toHaveLength(1);
+  });
 });

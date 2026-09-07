@@ -388,23 +388,27 @@ documents.put('/:id/supersede', requirePermission('canApprove'), async (c) => {
       return c.json({ message: 'Only effective documents can be superseded' }, 400);
     }
 
-    const updated = await prisma.document.update({
-      where: { id },
-      data: { status: 'superseded' },
-    });
-
-    await logAudit({
-      projectId: doc.projectId,
-      userId: user.userId,
-      action: 'status_change',
-      entityType: 'document',
-      entityId: id,
-      previousValue: { status: 'effective' },
-      newValue: { status: 'superseded' },
+    const updated = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.document.updateMany({
+        where: { id, currentVersion: doc.currentVersion, status: doc.status, updatedAt: doc.updatedAt },
+        data: { status: 'superseded' },
+      });
+      if (claimed.count !== 1) throw new DocumentConflictError('Document changed; reload before superseding');
+      await logAudit({
+        projectId: doc.projectId,
+        userId: user.userId,
+        action: 'status_change',
+        entityType: 'document',
+        entityId: id,
+        previousValue: { status: 'effective' },
+        newValue: { status: 'superseded' },
+      }, tx);
+      return tx.document.findUniqueOrThrow({ where: { id } });
     });
 
     return c.json({ document: updated });
   } catch (error: any) {
+    if (error instanceof DocumentConflictError) return c.json({ message: error.message }, 409);
     console.error('Supersede document error:', error);
     return c.json({ message: 'Failed to supersede document' }, 500);
   }
@@ -427,23 +431,27 @@ documents.put('/:id/retire', requirePermission('canApprove'), async (c) => {
       return c.json({ message: 'Only effective documents can be retired' }, 400);
     }
 
-    const updated = await prisma.document.update({
-      where: { id },
-      data: { status: 'retired' },
-    });
-
-    await logAudit({
-      projectId: doc.projectId,
-      userId: user.userId,
-      action: 'status_change',
-      entityType: 'document',
-      entityId: id,
-      previousValue: { status: 'effective' },
-      newValue: { status: 'retired' },
+    const updated = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.document.updateMany({
+        where: { id, currentVersion: doc.currentVersion, status: doc.status, updatedAt: doc.updatedAt },
+        data: { status: 'retired' },
+      });
+      if (claimed.count !== 1) throw new DocumentConflictError('Document changed; reload before retiring');
+      await logAudit({
+        projectId: doc.projectId,
+        userId: user.userId,
+        action: 'status_change',
+        entityType: 'document',
+        entityId: id,
+        previousValue: { status: 'effective' },
+        newValue: { status: 'retired' },
+      }, tx);
+      return tx.document.findUniqueOrThrow({ where: { id } });
     });
 
     return c.json({ document: updated });
   } catch (error: any) {
+    if (error instanceof DocumentConflictError) return c.json({ message: error.message }, 409);
     console.error('Retire document error:', error);
     return c.json({ message: 'Failed to retire document' }, 500);
   }
