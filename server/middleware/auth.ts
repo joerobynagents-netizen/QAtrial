@@ -1,5 +1,9 @@
 import type { Context, Next } from 'hono';
-import * as jwt from 'jsonwebtoken';
+import * as jwtImport from 'jsonwebtoken';
+// DEOX SUB-1 patch (JOE-2435, 2026-08-26): jsonwebtoken 9.0.3 CJS exports are not
+// cjs-module-lexer detectable under Node 24 ESM interop — `import * as jwt` yields
+// a namespace with only `default`, so jwt.sign/verify are undefined. Unwrap it.
+const jwt = ((jwtImport as unknown as { default?: typeof jwtImport }).default ?? jwtImport);
 
 function loadJwtSecret(): string {
   const secret = process.env.JWT_SECRET;

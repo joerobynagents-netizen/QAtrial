@@ -1,0 +1,42 @@
+# INDEX: components
+
+> Auto-indexed by folder-index.mjs - hand-edited descriptions are preserved. Last: 2026-09-27
+
+Path: `E:\Projects\QAtrial\src\components`
+
+## Subfolders
+- **ai/** - (see ai/INDEX.md)
+- **analytics/** - (see analytics/INDEX.md)
+- **approval/** - (see approval/INDEX.md)
+- **audit/** - (see audit/INDEX.md)
+- **audits/** - (see audits/INDEX.md)
+- **auth/** - (see auth/INDEX.md)
+- **change/** - (see change/INDEX.md)
+- **complaints/** - (see complaints/INDEX.md)
+- **dashboard/** - (see dashboard/INDEX.md)
+- **design/** - (see design/INDEX.md)
+- **deviations/** - (see deviations/INDEX.md)
+- **device/** - (see device/INDEX.md)
+- **documents/** - (see documents/INDEX.md)
+- **econsent/** - (see econsent/INDEX.md)
+- **etmf/** - (see etmf/INDEX.md)
+- **evidence/** - (see evidence/INDEX.md)
+- **forms/** - (see forms/INDEX.md)
+- **gamp/** - (see gamp/INDEX.md)
+- **import/** - (see import/INDEX.md)
+- **kpi/** - (see kpi/INDEX.md)
+- **layout/** - (see layout/INDEX.md)
+- **mobile/** - (see mobile/INDEX.md)
+- **pharma/** - (see pharma/INDEX.md)
+- **reports/** - (see reports/INDEX.md)
+- **requirements/** - (see requirements/INDEX.md)
+- **settings/** - (see settings/INDEX.md)
+- **shared/** - (see shared/INDEX.md)
+- **submissions/** - (see submissions/INDEX.md)
+- **suppliers/** - (see suppliers/INDEX.md)
+- **tasks/** - (see tasks/INDEX.md)
+- **tests/** - (see tests/INDEX.md)
+- **traceability/** - (see traceability/INDEX.md)
+- **training/** - (see training/INDEX.md)
+- **wizard/** - (see wizard/INDEX.md)
+- **workflows/** - (see workflows/INDEX.md)

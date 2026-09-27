@@ -25,3 +25,7 @@ dist-ssr
 articles/
 .claude/worktrees/
 .vercel
+
+# Local secrets (DEOX SUB-1 patch 2026-08-26: .env must never be committed)
+.env
+.env.*

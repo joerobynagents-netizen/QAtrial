@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Upload, Download, Trash2, Paperclip, FileText, AlertTriangle } from 'lucide-react';
 import { useAppMode } from '../../hooks/useAppMode';
@@ -48,7 +48,11 @@ export function EvidencePanel({ entityType, entityId, projectId, open, onClose }
   const { mode } = useAppMode();
   const isServerMode = mode === 'server';
 
-  const attachments = useEvidenceStore((s) => s.attachments.filter((a) => a.entityId === entityId));
+  const allAttachments = useEvidenceStore((s) => s.attachments);
+  const attachments = useMemo(
+    () => allAttachments.filter((attachment) => attachment.entityId === entityId),
+    [allAttachments, entityId],
+  );
   const addAttachment = useEvidenceStore((s) => s.addAttachment);
   const removeAttachment = useEvidenceStore((s) => s.removeAttachment);
   const currentUser = useAuthStore((s) => s.currentUser);

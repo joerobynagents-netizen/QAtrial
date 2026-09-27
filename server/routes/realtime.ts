@@ -17,7 +17,9 @@ realtime.get('/events', async (c) => {
   // Verify token manually
   let userId = 'anonymous';
   try {
-    const jwt = await import('jsonwebtoken');
+    const jwtImport = await import('jsonwebtoken');
+    // DEOX SUB-1 patch (JOE-2435): jsonwebtoken 9.0.3 ESM interop — see middleware/auth.ts
+    const jwt = (jwtImport as unknown as { default?: typeof jwtImport }).default ?? jwtImport;
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     if (decoded.type === 'refresh') {
       return c.json({ message: 'Cannot use refresh token for API access' }, 401);

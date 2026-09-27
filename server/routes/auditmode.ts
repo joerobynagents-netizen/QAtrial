@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
-import * as jwt from 'jsonwebtoken';
+import * as jwtImport from 'jsonwebtoken';
+// DEOX SUB-1 patch (JOE-2435): jsonwebtoken 9.0.3 ESM interop — see middleware/auth.ts
+const jwt = ((jwtImport as unknown as { default?: typeof jwtImport }).default ?? jwtImport);
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware, requireRole, getUser, JWT_SECRET } from '../middleware/auth.js';
 
